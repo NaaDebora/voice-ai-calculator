@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'screens/home_screen.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -12,10 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Voice AI Calculator',
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Voice AI Calculator')),
-        body: const Center(child: Text('Welcome to Voice AI Calculator!')),
-      ),
+      home: const HomeScreen(),
     );
   }
 }
