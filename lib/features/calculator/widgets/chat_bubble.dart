@@ -8,23 +8,37 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 300),
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: message.isUser
-              ? const Color(0xFF2563EB)
-              : const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            fontSize: 15,
-            color: message.isUser ? Colors.white : Colors.black87,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Align(
+        alignment: message.isUser
+            ? Alignment.centerRight
+            : Alignment.centerLeft,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 700),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: message.isUser
+                ? colorScheme.primary
+                : colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(18),
+              topRight: const Radius.circular(18),
+              bottomLeft: Radius.circular(message.isUser ? 18 : 4),
+              bottomRight: Radius.circular(message.isUser ? 4 : 18),
+            ),
+          ),
+          child: SelectableText(
+            message.text,
+            style: TextStyle(
+              fontSize: 15,
+              height: 1.5,
+              color: message.isUser
+                  ? colorScheme.onPrimary
+                  : colorScheme.onSurface,
+            ),
           ),
         ),
       ),
