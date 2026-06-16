@@ -1,13 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:voice_ai_calculator/app/theme_controller.dart';
 import 'package:voice_ai_calculator/features/calculator/models/message_model.dart';
 import 'package:voice_ai_calculator/features/calculator/services/gemini_service.dart';
+import 'package:voice_ai_calculator/features/calculator/services/history_service.dart';
 import 'package:voice_ai_calculator/features/calculator/widgets/chat_bubble.dart';
 import 'package:voice_ai_calculator/features/calculator/widgets/chat_input.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_ai_calculator/app/theme_controller.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +20,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController controller = TextEditingController();
   final GeminiService geminiService = GeminiService();
+  final HistoryService historyService = HistoryService();
   final ScrollController scrollController = ScrollController();
 
   final List<Message> messages = [];
@@ -35,6 +37,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     speech = stt.SpeechToText();
+    loadHistory();
+  }
+
+  Future<void> loadHistory() async {
+    final savedMessages = await historyService.loadMessages();
+
+    if (!mounted) return;
+
+    setState(() {
+      messages.addAll(savedMessages);
+    });
+
+    scrollToBottom();
+  }
+
+  Future<void> saveHistory() async {
+    await historyService.saveMessages(messages);
+  }
+
+  Future<void> clearHistory() async {
+    await historyService.clearMessages();
+
+    if (!mounted) return;
+
+    setState(() {
+      messages.clear();
+    });
   }
 
   Future<void> listen() async {
@@ -99,6 +128,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       loading = true;
     });
 
+    await saveHistory();
     scrollToBottom();
 
     try {
@@ -110,6 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         messages.add(Message(text: answer, isUser: false));
       });
 
+      await saveHistory();
       scrollToBottom();
     } catch (e) {
       if (!mounted) return;
@@ -123,6 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       });
 
+      await saveHistory();
       scrollToBottom();
     } finally {
       if (mounted) {
@@ -147,20 +179,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentTheme = ref.watch(themeModeProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Voice AI Calculator'),
         actions: [
           IconButton(
+            tooltip: 'Limpar histórico',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: messages.isEmpty ? null : clearHistory,
+          ),
+          IconButton(
             tooltip: 'Alternar tema',
             icon: Icon(
-              ref.watch(themeModeProvider) == ThemeMode.dark
+              currentTheme == ThemeMode.dark
                   ? Icons.light_mode
                   : Icons.dark_mode,
             ),
             onPressed: () {
-              final currentTheme = ref.read(themeModeProvider);
-
               ref
                   .read(themeModeProvider.notifier)
                   .state = currentTheme == ThemeMode.dark
