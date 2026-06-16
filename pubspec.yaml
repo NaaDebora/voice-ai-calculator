@@ -37,7 +37,7 @@ dependencies:
 
   flutter_riverpod: ^2.6.1
   flutter_dotenv: ^5.2.1
-  speech_to_text: ^7.0.0
+  speech_to_text: ^7.4.0
   flutter_tts: ^4.2.2
   http: ^1.2.2
 

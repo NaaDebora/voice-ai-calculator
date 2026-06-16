@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:voice_ai_calculator/features/calculator/message_model.dart';
 
 import '../services/gemini_service.dart';
+
+import 'package:voice_ai_calculator/features/calculator/widgets/chat_bubble.dart';
+import 'package:voice_ai_calculator/features/calculator/widgets/chat_input.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,49 +16,91 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController controller = TextEditingController();
-
   final GeminiService geminiService = GeminiService();
+  final ScrollController scrollController = ScrollController();
 
-  String result = '';
-
+  List<Message> messages = [];
   bool loading = false;
 
-  Future<void> calculate() async {
-    if (controller.text.trim().isEmpty) {
-      return;
+  late stt.SpeechToText speech;
+  bool isListening = false;
+
+  @override
+  void initState() {
+    super.initState();
+    speech = stt.SpeechToText();
+  }
+
+  // 🎤 VOZ
+  Future<void> listen() async {
+    bool available = await speech.initialize(
+      onStatus: (status) {
+        if (status == 'done' || status == 'notListening') {
+          setState(() => isListening = false);
+        }
+      },
+      onError: (error) {
+        setState(() => isListening = false);
+      },
+    );
+
+    if (available) {
+      setState(() => isListening = true);
+
+      speech.listen(
+        localeId: 'pt_BR',
+        onResult: (result) {
+          setState(() {
+            controller.text = result.recognizedWords;
+          });
+        },
+      );
     }
+  }
+
+  // 🤖 IA
+  Future<void> calculate() async {
+    final input = controller.text.trim();
+
+    if (input.isEmpty) return;
+
+    controller.clear();
 
     setState(() {
+      messages.add(Message(text: input, isUser: true));
       loading = true;
-      result = '';
     });
 
+    scrollToBottom();
+
     try {
-      final answer = await geminiService.ask(controller.text.trim());
+      final answer = await geminiService.ask(input);
 
       setState(() {
-        result = answer;
+        messages.add(Message(text: answer, isUser: false));
       });
+
+      scrollToBottom();
     } catch (e) {
       setState(() {
-        result =
-            '''
-Erro ao consultar a IA.
-
-Verifique:
-
-- Chave API
-- Conexão com internet
-- Limites da API Gemini
-
-Detalhes:
-$e
-''';
+        messages.add(Message(text: "Erro: $e", isUser: false));
       });
+
+      scrollToBottom();
     } finally {
       setState(() {
         loading = false;
       });
+    }
+  }
+
+  void scrollToBottom() {
+    if (scrollController.hasClients) {
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -65,46 +112,38 @@ $e
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            TextField(
-              controller: controller,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Digite um cálculo ou situação...',
+            Expanded(
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final msg = messages[index];
+                  return ChatBubble(message: msg);
+                },
               ),
             ),
-
-            const SizedBox(height: 16),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: loading ? null : calculate,
-                child: const Text('Calcular'),
-              ),
-            ),
-
-            const SizedBox(height: 24),
 
             if (loading) const CircularProgressIndicator(),
 
-            if (!loading && result.isNotEmpty)
-              Expanded(
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SingleChildScrollView(
-                      child: SelectableText(
-                        result,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            const SizedBox(height: 8),
+
+            ChatInput(
+              controller: controller,
+              onSend: calculate,
+              onMic: listen,
+              loading: loading,
+              isListening: isListening,
+            ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    controller.dispose();
+    super.dispose();
   }
 }
