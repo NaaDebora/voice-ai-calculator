@@ -6,15 +6,17 @@ import 'package:voice_ai_calculator/features/calculator/models/message_model.dar
 import 'package:voice_ai_calculator/features/calculator/services/gemini_service.dart';
 import 'package:voice_ai_calculator/features/calculator/widgets/chat_bubble.dart';
 import 'package:voice_ai_calculator/features/calculator/widgets/chat_input.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_ai_calculator/app/theme_controller.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final TextEditingController controller = TextEditingController();
   final GeminiService geminiService = GeminiService();
   final ScrollController scrollController = ScrollController();
@@ -146,7 +148,28 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Voice AI Calculator')),
+      appBar: AppBar(
+        title: const Text('Voice AI Calculator'),
+        actions: [
+          IconButton(
+            tooltip: 'Alternar tema',
+            icon: Icon(
+              ref.watch(themeModeProvider) == ThemeMode.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+            onPressed: () {
+              final currentTheme = ref.read(themeModeProvider);
+
+              ref
+                  .read(themeModeProvider.notifier)
+                  .state = currentTheme == ThemeMode.dark
+                  ? ThemeMode.light
+                  : ThemeMode.dark;
+            },
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
