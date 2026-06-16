@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:voice_ai_calculator/features/calculator/models/message_model.dart';
 import 'package:voice_ai_calculator/features/calculator/services/gemini_service.dart';
 import 'package:voice_ai_calculator/features/calculator/widgets/chat_bubble.dart';
 import 'package:voice_ai_calculator/features/calculator/widgets/chat_input.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,11 +19,15 @@ class _HomeScreenState extends State<HomeScreen> {
   final GeminiService geminiService = GeminiService();
   final ScrollController scrollController = ScrollController();
 
-  List<Message> messages = [];
-  bool loading = false;
+  final List<Message> messages = [];
 
   late stt.SpeechToText speech;
+
+  bool loading = false;
   bool isListening = false;
+  bool ignoreSpeechResult = false;
+
+  Timer? voiceTimer;
 
   @override
   void initState() {
@@ -29,15 +35,18 @@ class _HomeScreenState extends State<HomeScreen> {
     speech = stt.SpeechToText();
   }
 
-  // 🎤 VOZ
   Future<void> listen() async {
+    ignoreSpeechResult = false;
+
     final available = await speech.initialize(
       onStatus: (status) {
         if (status == 'done' || status == 'notListening') {
+          if (!mounted) return;
           setState(() => isListening = false);
         }
       },
       onError: (error) {
+        if (!mounted) return;
         setState(() => isListening = false);
       },
     );
@@ -48,19 +57,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
     speech.listen(
       onResult: (result) {
+        if (ignoreSpeechResult) return;
+
         setState(() {
           controller.text = result.recognizedWords;
+        });
+
+        voiceTimer?.cancel();
+
+        voiceTimer = Timer(const Duration(seconds: 1), () async {
+          final input = controller.text.trim();
+
+          if (input.isEmpty || loading) return;
+
+          ignoreSpeechResult = true;
+
+          await speech.stop();
+
+          if (!mounted) return;
+
+          setState(() => isListening = false);
+
+          calculate();
         });
       },
       listenOptions: stt.SpeechListenOptions(localeId: 'pt_BR'),
     );
   }
 
-  // 🤖 IA
   Future<void> calculate() async {
     final input = controller.text.trim();
 
-    if (input.isEmpty) return;
+    if (input.isEmpty || loading) return;
 
     controller.clear();
 
@@ -74,32 +102,45 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final answer = await geminiService.ask(input);
 
+      if (!mounted) return;
+
       setState(() {
         messages.add(Message(text: answer, isUser: false));
       });
 
       scrollToBottom();
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
-        messages.add(Message(text: "Erro: $e", isUser: false));
+        messages.add(
+          Message(
+            text: 'Erro ao consultar a IA. Tente novamente.',
+            isUser: false,
+          ),
+        );
       });
 
       scrollToBottom();
     } finally {
-      setState(() {
-        loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
     }
   }
 
   void scrollToBottom() {
-    if (scrollController.hasClients) {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!scrollController.hasClients) return;
+
       scrollController.animateTo(
         scrollController.position.maxScrollExtent,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
-    }
+    });
   }
 
   @override
@@ -115,16 +156,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 controller: scrollController,
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
-                  final msg = messages[index];
-                  return ChatBubble(message: msg);
+                  final message = messages[index];
+                  return ChatBubble(message: message);
                 },
               ),
             ),
-
             if (loading) const CircularProgressIndicator(),
-
             const SizedBox(height: 8),
-
             ChatInput(
               controller: controller,
               onSend: calculate,
@@ -140,6 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    voiceTimer?.cancel();
     scrollController.dispose();
     controller.dispose();
     super.dispose();
