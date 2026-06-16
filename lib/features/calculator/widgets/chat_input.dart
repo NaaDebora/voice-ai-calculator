@@ -27,6 +27,8 @@ class ChatInput extends StatelessWidget {
         Expanded(
           child: TextField(
             controller: controller,
+            onSubmitted: (_) => onSend(),
+            textInputAction: TextInputAction.send,
             decoration: const InputDecoration(
               hintText: "Digite ou fale um cálculo...",
               border: OutlineInputBorder(),

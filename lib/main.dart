@@ -19,6 +19,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Voice AI Calculator',
+
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+      ),
+
+      darkTheme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+
+      themeMode: ThemeMode.system,
+
       home: const HomeScreen(),
     );
   }
