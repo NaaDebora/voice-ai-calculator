@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:voice_ai_calculator/features/calculator/message_model.dart';
-
-import '../services/gemini_service.dart';
-
+import 'package:voice_ai_calculator/features/calculator/models/message_model.dart';
+import 'package:voice_ai_calculator/features/calculator/services/gemini_service.dart';
 import 'package:voice_ai_calculator/features/calculator/widgets/chat_bubble.dart';
 import 'package:voice_ai_calculator/features/calculator/widgets/chat_input.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -33,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 🎤 VOZ
   Future<void> listen() async {
-    bool available = await speech.initialize(
+    final available = await speech.initialize(
       onStatus: (status) {
         if (status == 'done' || status == 'notListening') {
           setState(() => isListening = false);
@@ -44,18 +42,18 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
 
-    if (available) {
-      setState(() => isListening = true);
+    if (!available) return;
 
-      speech.listen(
-        localeId: 'pt_BR',
-        onResult: (result) {
-          setState(() {
-            controller.text = result.recognizedWords;
-          });
-        },
-      );
-    }
+    setState(() => isListening = true);
+
+    speech.listen(
+      onResult: (result) {
+        setState(() {
+          controller.text = result.recognizedWords;
+        });
+      },
+      listenOptions: stt.SpeechListenOptions(localeId: 'pt_BR'),
+    );
   }
 
   // 🤖 IA

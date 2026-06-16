@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../message_model.dart';
+import 'package:voice_ai_calculator/features/calculator/models/message_model.dart';
 
 class ChatBubble extends StatelessWidget {
   final Message message;
