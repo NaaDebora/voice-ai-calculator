@@ -1,18 +1,63 @@
-# voice_ai_calculator
+# Voice AI Calculator
 
-A new Flutter project.
+Uma calculadora inteligente desenvolvida com Flutter Web e Google Gemini AI, capaz de receber comandos por texto ou voz e responder com explicações detalhadas dos cálculos realizados.
 
-## Getting Started
+## ✨ Funcionalidades
 
-This project is a starting point for a Flutter application.
+* Integração com Google Gemini AI
+* Entrada por voz (Speech-to-Text)
+* Entrada por texto
+* Envio automático após gravação de voz
+* Interface estilo chat
+* Histórico persistente de conversas
+* Tema Dark Mode e Light Mode
+* Layout responsivo para Web
+* Scroll automático das mensagens
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠️ Tecnologias Utilizadas
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+* Flutter
+* Dart
+* Google Gemini API
+* Speech To Text
+* Shared Preferences
+* Flutter Riverpod
+* Flutter Dotenv
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🚀 Como Executar
 
+1. Clone o repositório:
+
+```bash
+git clone <url-do-repositorio>
+```
+
+2. Instale as dependências:
+
+```bash
+flutter pub get
+```
+
+3. Configure sua chave Gemini:
+
+Crie o arquivo:
+
+```text
+assets/env/.env
+```
+
+E adicione:
+
+```env
+GEMINI_API_KEY=SUA_CHAVE_AQUI
+```
+
+4. Execute o projeto:
+
+```bash
+flutter run -d chrome
+```
+
+## 👩‍💻 Desenvolvido por
+
+Naã Debora
